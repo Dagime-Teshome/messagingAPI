@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["extendedWhereUnique"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id             Int     @id @default(autoincrement())
+  phoneNumber    String? @db.VarChar(20)
+  telegramId     Int?
+  providerId     Int?
+  slackId        String? @db.VarChar(50)
+  email          String? @db.VarChar(50)
+  slackChannelId String? @db.VarChar(100)
+}
+
+model App {
+  id        Int        @id @default(autoincrement())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  provider  Provider[]
+}
+
+model Message {
+  subject      String?  @db.VarChar(50)
+  type         String?  @db.VarChar(50)
+  file         Bytes?
+  id           Int      @id @default(autoincrement())
+  providerId   Int      
+  provider     Provider @relation(fields: [providerId], references: [id])
+  to           String
+  from         String?
+  content      String  @db.Text
+  retryCount   Int     @default(0)
+  status       Message_status   @default(PENDING) 
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now())
+
+}
+
+model Provider {
+  id        Int           @id @default(autoincrement())
+  appId     Int
+  type      Provider_type
+  settings  Json
+  createdAt DateTime      @default(now())
+  updatedAt DateTime
+  message   Message[]
+  app       App           @relation(fields: [appId], references: [id])
+}
+
+enum Provider_type {
+  TELEGRAM
+  EMAIL
+  SMS
+  SLACK
+}
+
+enum Message_status {
+  PENDING
+  SENT
+  FAILED
+}
